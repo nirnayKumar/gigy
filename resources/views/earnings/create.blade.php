@@ -80,7 +80,7 @@
 
                     <div class="form-group">
                         <label for="hours_worked" class="form-label">Hours Worked *</label>
-                        <input id="hours_worked" type="number" step="0.25" min="0.1" max="24" name="hours_worked" class="form-control calc-trigger" value="{{ old('hours_worked', '8.0') }}" placeholder="8.0" required>
+                        <input id="hours_worked" type="number" step="0.25" min="1" max="24" name="hours_worked" class="form-control calc-trigger" value="{{ old('hours_worked', '8.0') }}" placeholder="8.0" required>
                         <div class="form-text">Total shift logged-in duration</div>
                         @error('hours_worked')
                             <div class="form-error">{{ $message }}</div>

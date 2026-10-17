@@ -56,20 +56,7 @@ class GeminiService
 
     public function getActiveModel(): string
     {
-        // Verified supported models on Google API: gemini-2.5-flash, gemini-flash-latest, etc.
-        $supportedModels = [
-            'gemini-2.5-flash',
-            'gemini-flash-latest',
-            'gemini-2.5-pro',
-            'gemini-flash-lite-latest',
-        ];
-
-        if (in_array($this->model, $supportedModels)) {
-            return $this->model;
-        }
-
-        // Default to verified fast flash model
-        return 'gemini-2.5-flash';
+        return $this->model ?: 'gemini-3.8-flash';
     }
 
     /**
@@ -85,7 +72,7 @@ class GeminiService
         }
 
         $activeModel = $this->getActiveModel();
-        $modelsToTry = array_unique([$activeModel, 'gemini-2.5-flash', 'gemini-flash-latest']);
+        $modelsToTry = array_unique([$activeModel, 'gemini-3.8-flash']);
 
         $lastError = 'Unknown error';
 
@@ -116,7 +103,9 @@ class GeminiService
                     ];
                 }
 
-                $response = Http::timeout($this->timeout)
+                $response = Http::connectTimeout(15)
+                    ->timeout(25)
+                    ->retry(2, 400, throw: false)
                     ->withHeaders(['Content-Type' => 'application/json'])
                     ->post($url, $payload);
 
@@ -132,21 +121,36 @@ class GeminiService
                     }
                 }
 
+                $status = $response->status();
                 $errorData = $response->json();
-                $errorMessage = $errorData['error']['message'] ?? ('HTTP ' . $response->status());
+                $errorMessage = $errorData['error']['message'] ?? ('HTTP ' . $status);
                 $lastError = "Model {$modelName}: " . $errorMessage;
                 Log::warning("Gemini attempt with {$modelName} failed: " . $errorMessage);
 
-                // If it's a quota or rate-limit or 404, we try next model
+                // Only try next model if 404 (model not found). On 429 or other errors, break early.
+                if ($status !== 404) {
+                    break;
+                }
+
             } catch (\Throwable $e) {
-                $lastError = $e->getMessage();
-                Log::error("Gemini exception with {$modelName}: " . $e->getMessage());
+                $msg = $e->getMessage();
+                Log::error("Gemini exception with {$modelName}: " . $msg);
+                
+                if (str_contains($msg, 'cURL error 28') || str_contains($msg, 'timed out')) {
+                    return [
+                        'success' => false,
+                        'content' => 'Network connection to Google Gemini API timed out. Please check your internet connection and try again in a few moments.',
+                    ];
+                }
+
+                $lastError = $msg;
+                break; // Don't cycle models on connection failures
             }
         }
 
         return [
             'success' => false,
-            'content' => "AI Service Error: {$lastError}. Please check your Gemini API key and quota.",
+            'content' => "AI Service Notice: {$lastError}. Please check your Gemini API key and quota.",
         ];
     }
 
