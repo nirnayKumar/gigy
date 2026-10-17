@@ -99,7 +99,8 @@
             <input type="hidden" name="preferred_language" value="{{ $complaint->preferred_language }}">
             <input type="hidden" name="generated_draft" value="{{ $complaint->generated_draft }}">
 
-            <select name="status" class="form-control" style="width: auto;">
+            <label for="statusSelect" class="form-label" style="margin-bottom: 0;">Update Dispute Status:</label>
+            <select id="statusSelect" name="status" class="form-control" style="width: auto;">
                 <option value="draft" {{ $complaint->status === 'draft' ? 'selected' : '' }}>Draft</option>
                 <option value="submitted" {{ $complaint->status === 'submitted' ? 'selected' : '' }}>Submitted to Support</option>
                 <option value="resolved" {{ $complaint->status === 'resolved' ? 'selected' : '' }}>Resolved / Paid Back</option>

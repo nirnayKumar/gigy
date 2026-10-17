@@ -28,10 +28,11 @@
     </div>
 
     <!-- 3 Pillars Grid -->
+    <h2 class="sr-only">Core Features and Benefits</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; text-align: left; margin-bottom: 3rem;">
         <!-- Feature 1 -->
         <div class="card" style="border-top: 4px solid #059669;">
-            <div style="font-size: 2rem; margin-bottom: 0.75rem;">💰</div>
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;" aria-hidden="true">💰</div>
             <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-900);">Net Earnings Calculator</h3>
             <p style="font-size: 0.9rem; color: var(--gray-600); line-height: 1.5;">
                 Calculate true profit after fuel, platform commissions, maintenance, and penalties. Know your exact hourly wage in ₹/hour.
@@ -39,8 +40,8 @@
         </div>
 
         <!-- Feature 2 -->
-        <div class="card" style="border-top: 4px solid #f59e0b;">
-            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🤖</div>
+        <div class="card" style="border-top: 4px solid #d97706;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;" aria-hidden="true">🤖</div>
             <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-900);">Multilingual AI Explainer</h3>
             <p style="font-size: 0.9rem; color: var(--gray-600); line-height: 1.5;">
                 Powered by Google Gemini. Ask Gigy to break down strange deductions, incentive shortfalls, and trip audits in English, Hindi, or Punjabi.
@@ -48,8 +49,8 @@
         </div>
 
         <!-- Feature 3 -->
-        <div class="card" style="border-top: 4px solid #3b82f6;">
-            <div style="font-size: 2rem; margin-bottom: 0.75rem;">⚖️</div>
+        <div class="card" style="border-top: 4px solid #2563eb;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;" aria-hidden="true">⚖️</div>
             <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-900);">Grievance Complaint Generator</h3>
             <p style="font-size: 0.9rem; color: var(--gray-600); line-height: 1.5;">
                 Draft assertive, respectful dispute tickets for Zomato, Swiggy, Uber, Zepto, or Blinkit support to recover unpaid incentives and wrong penalties.
@@ -59,18 +60,18 @@
 
     <!-- Supported Platforms -->
     <div style="padding: 1.5rem; background: #ffffff; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); margin-bottom: 2rem;">
-        <p style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-600); margin-bottom: 1rem;">
+        <p style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-700); margin-bottom: 1rem;">
             Empowering Partners Across All Major Indian Platforms
         </p>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap; font-weight: 700; color: var(--gray-700); font-size: 0.95rem;">
-            <span style="background: #fff1f2; color: #e11d48; padding: 4px 12px; border-radius: 9999px;">Zomato</span>
-            <span style="background: #fff7ed; color: #ea580c; padding: 4px 12px; border-radius: 9999px;">Swiggy</span>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; flex-wrap: wrap; font-weight: 700; color: var(--gray-800); font-size: 0.95rem;">
+            <span style="background: #fff1f2; color: #be123c; padding: 4px 12px; border-radius: 9999px;">Zomato</span>
+            <span style="background: #fff7ed; color: #c2410c; padding: 4px 12px; border-radius: 9999px;">Swiggy</span>
             <span style="background: #f8fafc; color: #0f172a; padding: 4px 12px; border-radius: 9999px; border: 1px solid #cbd5e1;">Uber</span>
-            <span style="background: #fefce8; color: #ca8a04; padding: 4px 12px; border-radius: 9999px;">Ola</span>
-            <span style="background: #fdf4ff; color: #c026d3; padding: 4px 12px; border-radius: 9999px;">Zepto</span>
-            <span style="background: #fef9c3; color: #854d0e; padding: 4px 12px; border-radius: 9999px;">Blinkit</span>
-            <span style="background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 9999px;">Porter</span>
-            <span style="background: #f0fdf4; color: #16a34a; padding: 4px 12px; border-radius: 9999px;">Amazon Flex</span>
+            <span style="background: #fefce8; color: #854d0e; padding: 4px 12px; border-radius: 9999px;">Ola</span>
+            <span style="background: #fdf4ff; color: #a21caf; padding: 4px 12px; border-radius: 9999px;">Zepto</span>
+            <span style="background: #fef9c3; color: #713f12; padding: 4px 12px; border-radius: 9999px;">Blinkit</span>
+            <span style="background: #eff6ff; color: #1d4ed8; padding: 4px 12px; border-radius: 9999px;">Porter</span>
+            <span style="background: #f0fdf4; color: #15803d; padding: 4px 12px; border-radius: 9999px;">Amazon Flex</span>
         </div>
     </div>
 </div>

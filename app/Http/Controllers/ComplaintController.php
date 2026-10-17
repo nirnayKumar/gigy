@@ -2,26 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GenerateComplaintDraftRequest;
+use App\Http\Requests\StoreComplaintRequest;
+use App\Http\Requests\UpdateComplaintRequest;
 use App\Models\Complaint;
-use App\Models\EarningsEntry;
 use App\Services\GeminiService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ComplaintController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        protected GeminiService $geminiService
+    ) {}
+
+    public function index(Request $request): View
     {
-        $complaints = $request->user()->complaints()->with('earningsEntry')->paginate(15);
+        $complaints = $request->user()->complaints()
+            ->with('earningsEntry')
+            ->paginate(15);
+
         return view('complaints.index', [
             'complaints' => $complaints,
         ]);
     }
 
-    public function create(Request $request)
+    public function create(Request $request): View
     {
         $prefill = [];
         $earningsEntryId = $request->query('earnings_entry_id');
+
         if ($earningsEntryId) {
             $entry = $request->user()->earningsEntries()->find($earningsEntryId);
             if ($entry) {
@@ -43,20 +56,12 @@ class ComplaintController extends Controller
         ]);
     }
 
-    public function generateDraft(Request $request, GeminiService $gemini)
+    public function generateDraft(GenerateComplaintDraftRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:100'],
-            'issue_category' => ['required', 'string', 'max:100'],
-            'expected_amount' => ['nullable', 'numeric', 'min:0'],
-            'received_amount' => ['nullable', 'numeric', 'min:0'],
-            'incident_date' => ['nullable', 'date'],
-            'description' => ['required', 'string', 'max:2000'],
-            'preferred_language' => ['nullable', 'string', 'in:English,Hindi,Punjabi'],
-        ]);
-
+        $validated = $request->validated();
         $language = $validated['preferred_language'] ?? ($request->user()->preferred_language ?? 'English');
-        $draft = $gemini->generateComplaintDraft($validated, $language);
+
+        $draft = $this->geminiService->generateComplaintDraft($validated, $language);
 
         return response()->json([
             'success' => true,
@@ -65,22 +70,11 @@ class ComplaintController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreComplaintRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'earnings_entry_id' => ['nullable', 'exists:earnings_entries,id'],
-            'company_name' => ['required', 'string', 'max:100'],
-            'issue_category' => ['required', 'string', 'max:100'],
-            'expected_amount' => ['nullable', 'numeric', 'min:0'],
-            'received_amount' => ['nullable', 'numeric', 'min:0'],
-            'incident_date' => ['nullable', 'date'],
-            'description' => ['required', 'string', 'max:2000'],
-            'preferred_language' => ['nullable', 'string', 'in:English,Hindi,Punjabi'],
-            'generated_draft' => ['nullable', 'string'],
-            'status' => ['nullable', 'string', 'in:draft,submitted,resolved,cancelled'],
-        ]);
+        $validated = $request->validated();
 
-        // Verify earnings_entry_id belongs to user if present
+        // Verify earnings_entry_id belongs to logged-in user if provided
         if (!empty($validated['earnings_entry_id'])) {
             $ownsEntry = $request->user()->earningsEntries()->where('id', $validated['earnings_entry_id'])->exists();
             if (!$ownsEntry) {
@@ -88,40 +82,38 @@ class ComplaintController extends Controller
             }
         }
 
-        $complaint = $request->user()->complaints()->create([
-            'earnings_entry_id' => $validated['earnings_entry_id'] ?? null,
-            'company_name' => $validated['company_name'],
-            'issue_category' => $validated['issue_category'],
-            'expected_amount' => $validated['expected_amount'] ?? null,
-            'received_amount' => $validated['received_amount'] ?? null,
-            'incident_date' => $validated['incident_date'] ?? null,
-            'description' => $validated['description'],
-            'preferred_language' => $validated['preferred_language'] ?? 'English',
-            'generated_draft' => $validated['generated_draft'] ?? null,
-            'status' => $validated['status'] ?? 'draft',
-        ]);
+        $complaint = DB::transaction(function () use ($request, $validated) {
+            return $request->user()->complaints()->create([
+                'earnings_entry_id' => $validated['earnings_entry_id'] ?? null,
+                'company_name' => $validated['company_name'],
+                'issue_category' => $validated['issue_category'],
+                'expected_amount' => $validated['expected_amount'] ?? null,
+                'received_amount' => $validated['received_amount'] ?? null,
+                'incident_date' => $validated['incident_date'] ?? null,
+                'description' => $validated['description'],
+                'preferred_language' => $validated['preferred_language'] ?? 'English',
+                'generated_draft' => $validated['generated_draft'] ?? null,
+                'status' => $validated['status'] ?? 'draft',
+            ]);
+        });
 
         return redirect()->route('complaints.show', $complaint)->with('success', 'Complaint draft saved to your database!');
     }
 
-    public function show(Complaint $complaint)
+    public function show(Request $request, Complaint $complaint): View
     {
-        if ($complaint->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this complaint.');
-        }
+        $this->authorize('view', $complaint);
 
         return view('complaints.show', [
             'complaint' => $complaint,
         ]);
     }
 
-    public function edit(Complaint $complaint)
+    public function edit(Request $request, Complaint $complaint): View
     {
-        if ($complaint->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this complaint.');
-        }
+        $this->authorize('update', $complaint);
 
-        $userEarnings = Auth::user()->earningsEntries()->latest('work_date')->take(20)->get();
+        $userEarnings = $request->user()->earningsEntries()->latest('work_date')->take(20)->get();
 
         return view('complaints.edit', [
             'complaint' => $complaint,
@@ -129,36 +121,25 @@ class ComplaintController extends Controller
         ]);
     }
 
-    public function update(Request $request, Complaint $complaint)
+    public function update(UpdateComplaintRequest $request, Complaint $complaint): RedirectResponse
     {
-        if ($complaint->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this complaint.');
-        }
+        $this->authorize('update', $complaint);
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'company_name' => ['required', 'string', 'max:100'],
-            'issue_category' => ['required', 'string', 'max:100'],
-            'expected_amount' => ['nullable', 'numeric', 'min:0'],
-            'received_amount' => ['nullable', 'numeric', 'min:0'],
-            'incident_date' => ['nullable', 'date'],
-            'description' => ['required', 'string', 'max:2000'],
-            'preferred_language' => ['nullable', 'string', 'in:English,Hindi,Punjabi'],
-            'generated_draft' => ['nullable', 'string'],
-            'status' => ['required', 'string', 'in:draft,submitted,resolved,cancelled'],
-        ]);
-
-        $complaint->update($validated);
+        DB::transaction(function () use ($complaint, $validated) {
+            $complaint->update($validated);
+        });
 
         return redirect()->route('complaints.show', $complaint)->with('success', 'Complaint draft updated.');
     }
 
-    public function destroy(Complaint $complaint)
+    public function destroy(Request $request, Complaint $complaint): RedirectResponse
     {
-        if ($complaint->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this complaint.');
-        }
+        $this->authorize('delete', $complaint);
 
-        $complaint->delete();
+        DB::transaction(function () use ($complaint) {
+            $complaint->delete();
+        });
 
         return redirect()->route('complaints.index')->with('success', 'Complaint record deleted.');
     }

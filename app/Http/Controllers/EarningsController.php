@@ -2,25 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ExplainEarningsRequest;
+use App\Http\Requests\StoreEarningsRequest;
 use App\Models\EarningsEntry;
+use App\Services\EarningsService;
 use App\Services\GeminiService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class EarningsController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        protected EarningsService $earningsService,
+        protected GeminiService $geminiService
+    ) {}
+
+    public function index(Request $request): View
     {
         $user = $request->user();
         $entries = $user->earningsEntries()->paginate(15);
 
-        // Calculate summary for this user
+        // Aggregate statistics using optimized collection
         $allEntries = $user->earningsEntries()->get();
-        $totalGross = $allEntries->sum('gross_earnings');
-        $totalIncentives = $allEntries->sum('incentives');
-        $totalExpenses = $allEntries->sum(fn($e) => $e->total_expenses);
-        $totalNet = $allEntries->sum(fn($e) => $e->net_earnings);
-        $totalHours = $allEntries->sum('hours_worked');
+        $totalGross = round($allEntries->sum('gross_earnings'), 2);
+        $totalIncentives = round($allEntries->sum('incentives'), 2);
+        $totalExpenses = round($allEntries->sum(fn($e) => $e->total_expenses), 2);
+        $totalNet = round($allEntries->sum(fn($e) => $e->net_earnings), 2);
+        $totalHours = round($allEntries->sum('hours_worked'), 2);
         $avgHourly = $totalHours > 0 ? round($totalNet / $totalHours, 2) : 0.00;
 
         return view('earnings.index', [
@@ -34,61 +45,52 @@ class EarningsController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
         return view('earnings.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreEarningsRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'work_date' => ['required', 'date'],
-            'gross_earnings' => ['required', 'numeric', 'min:0'],
-            'incentives' => ['nullable', 'numeric', 'min:0'],
-            'fuel_expenses' => ['nullable', 'numeric', 'min:0'],
-            'other_expenses' => ['nullable', 'numeric', 'min:0'],
-            'platform_deductions' => ['nullable', 'numeric', 'min:0'],
-            'hours_worked' => ['required', 'numeric', 'min:0.1', 'max:24'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
-        $entry = $request->user()->earningsEntries()->create([
-            'work_date' => $validated['work_date'],
-            'gross_earnings' => $validated['gross_earnings'],
-            'incentives' => $validated['incentives'] ?? 0.00,
-            'fuel_expenses' => $validated['fuel_expenses'] ?? 0.00,
-            'other_expenses' => $validated['other_expenses'] ?? 0.00,
-            'platform_deductions' => $validated['platform_deductions'] ?? 0.00,
-            'hours_worked' => $validated['hours_worked'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $entry = DB::transaction(function () use ($request, $validated) {
+            return $request->user()->earningsEntries()->create([
+                'work_date' => $validated['work_date'],
+                'gross_earnings' => $validated['gross_earnings'],
+                'incentives' => $validated['incentives'] ?? 0.00,
+                'fuel_expenses' => $validated['fuel_expenses'] ?? 0.00,
+                'other_expenses' => $validated['other_expenses'] ?? 0.00,
+                'platform_deductions' => $validated['platform_deductions'] ?? 0.00,
+                'hours_worked' => $validated['hours_worked'],
+                'notes' => $validated['notes'] ?? null,
+            ]);
+        });
 
         return redirect()->route('earnings.show', $entry)->with('success', 'Earnings shift recorded successfully!');
     }
 
-    public function show(EarningsEntry $earningsEntry)
+    public function show(Request $request, EarningsEntry $earningsEntry): View
     {
-        if ($earningsEntry->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this earnings record.');
-        }
+        // Enforce policy authorization
+        $this->authorize('view', $earningsEntry);
 
         return view('earnings.show', [
             'entry' => $earningsEntry,
         ]);
     }
 
-    public function explain(Request $request, EarningsEntry $earningsEntry, GeminiService $gemini)
+    public function explain(ExplainEarningsRequest $request, EarningsEntry $earningsEntry): View|JsonResponse
     {
-        if ($earningsEntry->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this earnings record.');
-        }
+        // Enforce policy authorization
+        $this->authorize('view', $earningsEntry);
 
         $language = $request->input('language', $request->user()->preferred_language ?? 'English');
         if (!in_array($language, ['English', 'Hindi', 'Punjabi'])) {
             $language = 'English';
         }
 
-        $explanation = $gemini->explainEarnings($earningsEntry, $language);
+        $explanation = $this->geminiService->explainEarnings($earningsEntry, $language);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -105,13 +107,14 @@ class EarningsController extends Controller
         ]);
     }
 
-    public function destroy(EarningsEntry $earningsEntry)
+    public function destroy(Request $request, EarningsEntry $earningsEntry): RedirectResponse
     {
-        if ($earningsEntry->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to this earnings record.');
-        }
+        // Enforce policy authorization
+        $this->authorize('delete', $earningsEntry);
 
-        $earningsEntry->delete();
+        DB::transaction(function () use ($earningsEntry) {
+            $earningsEntry->delete();
+        });
 
         return redirect()->route('earnings.index')->with('success', 'Earnings record deleted.');
     }

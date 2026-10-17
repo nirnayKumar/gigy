@@ -52,7 +52,7 @@
 
         @if($entries->isEmpty())
             <div class="empty-state">
-                <div class="empty-icon">
+                <div class="empty-icon" aria-hidden="true">
                     <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
                 <p style="font-weight: 600; color: var(--gray-700);">No earnings logged yet.</p>
@@ -64,15 +64,16 @@
         @else
             <div class="table-responsive">
                 <table class="table">
+                    <caption class="sr-only">Detailed list of recorded gig shifts with financial breakdown</caption>
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Total Income</th>
-                            <th>Total Expenses</th>
-                            <th>Net Profit</th>
-                            <th>Hours</th>
-                            <th>Rate (₹/hr)</th>
-                            <th>Actions</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Total Income</th>
+                            <th scope="col">Total Expenses</th>
+                            <th scope="col">Net Profit</th>
+                            <th scope="col">Hours</th>
+                            <th scope="col">Rate (₹/hr)</th>
+                            <th scope="col"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,14 +110,14 @@
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 0.4rem;">
-                                        <a href="{{ route('earnings.show', $entry) }}" class="btn btn-secondary btn-sm" title="View details and AI Explainer">
+                                        <a href="{{ route('earnings.show', $entry) }}" class="btn btn-secondary btn-sm" aria-label="View details and AI breakdown for {{ $entry->work_date->format('d M Y') }}">
                                             Breakdown
                                         </a>
-                                        <form method="POST" action="{{ route('earnings.destroy', $entry) }}" onsubmit="return confirm('Delete this earnings shift?');">
+                                        <form method="POST" action="{{ route('earnings.destroy', $entry) }}" onsubmit="return confirm('Delete shift from {{ $entry->work_date->format('d M Y') }}?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" title="Delete Record">
-                                                &times;
+                                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" aria-label="Delete shift record from {{ $entry->work_date->format('d M Y') }}">
+                                                Delete
                                             </button>
                                         </form>
                                     </div>
@@ -127,9 +128,9 @@
                 </table>
             </div>
 
-            <div style="margin-top: 1.25rem;">
+            <nav aria-label="Earnings pagination" style="margin-top: 1.25rem;">
                 {{ $entries->links() }}
-            </div>
+            </nav>
         @endif
     </div>
 </div>

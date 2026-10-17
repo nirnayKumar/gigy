@@ -6,27 +6,27 @@
 <div style="max-width: 480px; margin: 1.5rem auto;">
     <div class="card">
         <div style="text-align: center; margin-bottom: 1.5rem;">
-            <div class="brand-badge" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; font-size: 1.4rem;">G</div>
-            <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--gray-900);">Create your Gigy Account</h2>
-            <p style="font-size: 0.85rem; color: var(--gray-600); margin-top: 0.25rem;">Start tracking your real net earnings and protecting your payouts.</p>
+            <div class="brand-badge" aria-hidden="true" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; font-size: 1.4rem;">G</div>
+            <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--gray-900);">Create your Gigy Account</h1>
+            <p style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.25rem;">Start tracking your real net earnings and protecting your payouts.</p>
         </div>
 
-        <form method="POST" action="{{ route('register') }}">
+        <form method="POST" action="{{ route('register') }}" novalidate>
             @csrf
 
             <div class="form-group">
-                <label for="name" class="form-label">Full Name</label>
-                <input id="name" type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="e.g. Ramesh Kumar" required autofocus>
+                <label for="name" class="form-label">Full Name <span aria-hidden="true">*</span></label>
+                <input id="name" type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="e.g. Ramesh Kumar" autocomplete="name" required autofocus aria-required="true" @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
                 @error('name')
-                    <div class="form-error">{{ $message }}</div>
+                    <div id="name-error" class="form-error" role="alert">{{ $message }}</div>
                 @enderror
             </div>
 
             <div class="form-group">
-                <label for="email" class="form-label">Email Address</label>
-                <input id="email" type="email" name="email" class="form-control" value="{{ old('email') }}" placeholder="name@example.com" required>
+                <label for="email" class="form-label">Email Address <span aria-hidden="true">*</span></label>
+                <input id="email" type="email" name="email" class="form-control" value="{{ old('email') }}" placeholder="name@example.com" autocomplete="email" required aria-required="true" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                 @error('email')
-                    <div class="form-error">{{ $message }}</div>
+                    <div id="email-error" class="form-error" role="alert">{{ $message }}</div>
                 @enderror
             </div>
 
@@ -40,7 +40,7 @@
                     <option value="Other Informal / Freelance Work" {{ old('worker_type') == 'Other Informal / Freelance Work' ? 'selected' : '' }}>Other Informal / Freelance Work</option>
                 </select>
                 @error('worker_type')
-                    <div class="form-error">{{ $message }}</div>
+                    <div class="form-error" role="alert">{{ $message }}</div>
                 @enderror
             </div>
 
@@ -52,21 +52,22 @@
                     <option value="Punjabi" {{ old('preferred_language') == 'Punjabi' ? 'selected' : '' }}>Punjabi (ਪੰਜਾਬੀ)</option>
                 </select>
                 @error('preferred_language')
-                    <div class="form-error">{{ $message }}</div>
+                    <div class="form-error" role="alert">{{ $message }}</div>
                 @enderror
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <input id="password" type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required>
+                <label for="password" class="form-label">Password <span aria-hidden="true">*</span></label>
+                <input id="password" type="password" name="password" class="form-control" placeholder="Minimum 8 characters" autocomplete="new-password" required aria-required="true" aria-describedby="password-help @error('password') password-error @enderror" @error('password') aria-invalid="true" @enderror>
+                <div id="password-help" class="form-text">Must be at least 8 characters long.</div>
                 @error('password')
-                    <div class="form-error">{{ $message }}</div>
+                    <div id="password-error" class="form-error" role="alert">{{ $message }}</div>
                 @enderror
             </div>
 
             <div class="form-group">
-                <label for="password_confirmation" class="form-label">Confirm Password</label>
-                <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" placeholder="Re-enter your password" required>
+                <label for="password_confirmation" class="form-label">Confirm Password <span aria-hidden="true">*</span></label>
+                <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" placeholder="Re-enter your password" autocomplete="new-password" required aria-required="true">
             </div>
 
             <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
@@ -74,8 +75,8 @@
             </button>
         </form>
 
-        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--gray-600);">
-            Already have an account? <a href="{{ route('login') }}" style="color: var(--primary); font-weight: 700; text-decoration: none;">Log In here</a>
+        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.875rem; color: var(--gray-600);">
+            Already have an account? <a href="{{ route('login') }}" style="color: var(--primary); font-weight: 700; text-decoration: underline;">Log In here</a>
         </div>
     </div>
 </div>

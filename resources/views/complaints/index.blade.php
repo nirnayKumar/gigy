@@ -25,7 +25,7 @@
 
         @if($complaints->isEmpty())
             <div class="empty-state">
-                <div class="empty-icon">
+                <div class="empty-icon" aria-hidden="true">
                     <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
                 <p style="font-weight: 600; color: var(--gray-700);">No complaints or dispute drafts yet.</p>
@@ -37,15 +37,16 @@
         @else
             <div class="table-responsive">
                 <table class="table">
+                    <caption class="sr-only">List of saved grievance drafts and dispute submissions</caption>
                     <thead>
                         <tr>
-                            <th>Platform</th>
-                            <th>Issue Category</th>
-                            <th>Incident Date</th>
-                            <th>Expected vs Received</th>
-                            <th>Language</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th scope="col">Platform</th>
+                            <th scope="col">Issue Category</th>
+                            <th scope="col">Incident Date</th>
+                            <th scope="col">Expected vs Received</th>
+                            <th scope="col">Language</th>
+                            <th scope="col">Status</th>
+                            <th scope="col"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,17 +84,17 @@
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 0.4rem;">
-                                        <a href="{{ route('complaints.show', $c) }}" class="btn btn-secondary btn-sm" title="View / Copy Draft">
+                                        <a href="{{ route('complaints.show', $c) }}" class="btn btn-secondary btn-sm" aria-label="View complaint draft for {{ $c->company_name }}">
                                             View
                                         </a>
-                                        <a href="{{ route('complaints.edit', $c) }}" class="btn btn-secondary btn-sm" title="Edit">
+                                        <a href="{{ route('complaints.edit', $c) }}" class="btn btn-secondary btn-sm" aria-label="Edit complaint draft for {{ $c->company_name }}">
                                             Edit
                                         </a>
-                                        <form method="POST" action="{{ route('complaints.destroy', $c) }}" onsubmit="return confirm('Delete this complaint record?');">
+                                        <form method="POST" action="{{ route('complaints.destroy', $c) }}" onsubmit="return confirm('Delete complaint draft for {{ $c->company_name }}?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" title="Delete">
-                                                &times;
+                                            <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger); border-color: #fecaca;" aria-label="Delete complaint draft for {{ $c->company_name }}">
+                                                Delete
                                             </button>
                                         </form>
                                     </div>
@@ -104,9 +105,9 @@
                 </table>
             </div>
 
-            <div style="margin-top: 1.25rem;">
+            <nav aria-label="Complaints pagination" style="margin-top: 1.25rem;">
                 {{ $complaints->links() }}
-            </div>
+            </nav>
         @endif
     </div>
 </div>

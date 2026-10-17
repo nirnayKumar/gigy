@@ -8,12 +8,29 @@ use App\Models\EarningsEntry;
 use App\Models\User;
 use App\Services\GeminiService;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GigyWorkflowTest extends TestCase
 {
     public function test_gigy_full_end_to_end_workflow(): void
     {
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [
+                    [
+                        'content' => [
+                            'parts' => [
+                                ['text' => '### Shift Breakdown: You earned ₹900 net at ₹112.50/hr.'],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
+        ]);
+
         // 1. Register a new Gigy account
         $testEmail = 'worker_' . uniqid() . '@example.com';
         $registerResponse = $this->post('/register', [
@@ -119,7 +136,8 @@ class GigyWorkflowTest extends TestCase
         $complaintStore->assertRedirect(route('complaints.show', $complaint));
 
         // 8. Confirm persistence in database
-        $this->assertDatabaseHas('earnings_entries', ['id' => $entry->id, 'net_earnings' => 900.00]);
+        $this->assertDatabaseHas('earnings_entries', ['id' => $entry->id, 'gross_earnings' => 1000.00]);
+        $this->assertEquals(900.00, $entry->fresh()->net_earnings);
         $this->assertDatabaseHas('complaints', ['id' => $complaint->id, 'company_name' => 'Zomato']);
         $this->assertDatabaseHas('assistant_conversations', ['id' => $conv->id]);
 

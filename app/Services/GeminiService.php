@@ -155,11 +155,14 @@ class GeminiService
     }
 
     /**
-     * Feature A: Explain My Earnings with AI
+     * Feature A: Explain My Earnings with AI (with safe shift-hash caching).
      */
     public function explainEarnings(EarningsEntry $entry, string $language = 'English'): string
     {
-        $system = "You are Gigy, an expert AI companion advocating for gig economy workers (delivery partners, cab drivers, quick-commerce couriers) in India.
+        $cacheKey = "gemini_explain_{$entry->id}_{$entry->updated_at->timestamp}_{$language}";
+
+        return cache()->remember($cacheKey, now()->addMinutes(30), function () use ($entry, $language) {
+            $system = "You are Gigy, an expert AI companion advocating for gig economy workers (delivery partners, cab drivers, quick-commerce couriers) in India.
 Provide clear, empathetic, and highly practical explanations of daily earnings, incentives, and deductions.
 Languages supported: English, Hindi (written in readable script or easy Hindi), and Punjabi.
 Respond strictly in the requested language: {$language}.
@@ -171,7 +174,9 @@ Guidelines:
 5. Provide 2-3 realistic next steps (e.g. tracking surge hours, requesting deduction breakdowns, comparing trip logs).
 Keep the tone supportive, direct, and easy to read on a mobile phone.";
 
-        $prompt = "Please explain the following gig shift earnings for a worker in India:
+            $sanitizedNotes = mb_substr(strip_tags((string) $entry->notes), 0, 500);
+
+            $prompt = "Please explain the following gig shift earnings for a worker in India:
 - Date: {$entry->work_date->format('d M Y')}
 - Gross Earnings: ₹" . number_format($entry->gross_earnings, 2) . "
 - Incentives: ₹" . number_format($entry->incentives, 2) . "
@@ -183,12 +188,13 @@ Keep the tone supportive, direct, and easy to read on a mobile phone.";
 - Net Take-Home Earnings: ₹" . number_format($entry->net_earnings, 2) . "
 - Hours Worked: {$entry->hours_worked} hours
 - Effective Hourly Earnings: ₹" . number_format($entry->effective_hourly_earnings, 2) . "/hr
-- Worker Shift Notes: " . ($entry->notes ?: 'None provided') . "
+- Worker Shift Notes: " . ($sanitizedNotes ?: 'None provided') . "
 
 Language requested: {$language}. Give a concise, structured breakdown with actionable advice.";
 
-        $result = $this->generate($prompt, $system);
-        return $result['content'];
+            $result = $this->generate($prompt, $system);
+            return $result['content'];
+        });
     }
 
     /**
@@ -211,15 +217,18 @@ Guidelines:
 - Where appropriate, direct workers to verified official resources (e.g., official platform partner app help section, e-Shram portal, labor commissioners).
 - Be polite, supportive, concise, and mobile-friendly.";
 
-        // Build brief history context from past messages
+        // Build brief history context from past messages (last 6 messages)
         $historyText = "";
-        $recentMessages = $conversation->messages()->latest()->take(6)->get()->reverse();
+        $recentMessages = $conversation->messages()->latest('id')->take(6)->get()->reverse();
         foreach ($recentMessages as $msg) {
             $sender = $msg->role === 'user' ? 'Worker' : 'Gigy';
-            $historyText .= "{$sender}: {$msg->content}\n";
+            $content = mb_substr(strip_tags((string) $msg->content), 0, 500);
+            $historyText .= "{$sender}: {$content}\n";
         }
 
-        $prompt = "Conversation History:\n" . ($historyText ?: "No previous messages.\n") . "\nWorker's New Question: {$userMessage}\n\nRespond in {$language}.";
+        $sanitizedUserMessage = mb_substr(strip_tags((string) $userMessage), 0, 1000);
+
+        $prompt = "Conversation History:\n" . ($historyText ?: "No previous messages.\n") . "\nWorker's New Question: {$sanitizedUserMessage}\n\nRespond in {$language}.";
 
         $result = $this->generate($prompt, $system);
         return $result['content'];
@@ -236,12 +245,12 @@ Always label this as a DRAFT.
 Never claim the complaint has been submitted externally.
 Language requested: {$language}.";
 
-        $company = $data['company_name'] ?? 'Platform Support';
-        $category = $data['issue_category'] ?? 'Payment Dispute';
-        $expected = isset($data['expected_amount']) ? '₹' . number_format($data['expected_amount'], 2) : 'Not specified';
-        $received = isset($data['received_amount']) ? '₹' . number_format($data['received_amount'], 2) : 'Not specified';
-        $incidentDate = !empty($data['incident_date']) ? $data['incident_date'] : 'Recent shift';
-        $description = $data['description'] ?? '';
+        $company = mb_substr(strip_tags((string) ($data['company_name'] ?? 'Platform Support')), 0, 100);
+        $category = mb_substr(strip_tags((string) ($data['issue_category'] ?? 'Payment Dispute')), 0, 100);
+        $expected = isset($data['expected_amount']) ? '₹' . number_format((float) $data['expected_amount'], 2) : 'Not specified';
+        $received = isset($data['received_amount']) ? '₹' . number_format((float) $data['received_amount'], 2) : 'Not specified';
+        $incidentDate = !empty($data['incident_date']) ? strip_tags((string) $data['incident_date']) : 'Recent shift';
+        $description = mb_substr(strip_tags((string) ($data['description'] ?? '')), 0, 1500);
 
         $prompt = "Draft a formal grievance / complaint ticket for a gig worker in India with the following details:
 - Platform / Company: {$company}

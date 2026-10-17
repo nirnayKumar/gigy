@@ -25,9 +25,9 @@ Route::get('/', function () {
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-attempts');
 });
 
 // Authenticated Routes
@@ -42,29 +42,36 @@ Route::middleware('auth')->group(function () {
     Route::get('/earnings/create', [EarningsController::class, 'create'])->name('earnings.create');
     Route::post('/earnings', [EarningsController::class, 'store'])->name('earnings.store');
     Route::get('/earnings/{earningsEntry}', [EarningsController::class, 'show'])->name('earnings.show');
-    Route::post('/earnings/{earningsEntry}/explain', [EarningsController::class, 'explain'])->name('earnings.explain');
+    Route::post('/earnings/{earningsEntry}/explain', [EarningsController::class, 'explain'])
+        ->name('earnings.explain')
+        ->middleware('throttle:ai-generation');
     Route::delete('/earnings/{earningsEntry}', [EarningsController::class, 'destroy'])->name('earnings.destroy');
 
     // Worker Assistant AI Chat
     Route::get('/assistant', [AssistantController::class, 'index'])->name('assistant.index');
     Route::post('/assistant', [AssistantController::class, 'store'])->name('assistant.store');
     Route::get('/assistant/{conversation}', [AssistantController::class, 'show'])->name('assistant.show');
-    Route::post('/assistant/{conversation}/message', [AssistantController::class, 'sendMessage'])->name('assistant.message');
+    Route::post('/assistant/{conversation}/message', [AssistantController::class, 'sendMessage'])
+        ->name('assistant.message')
+        ->middleware('throttle:ai-generation');
     Route::delete('/assistant/{conversation}', [AssistantController::class, 'destroy'])->name('assistant.destroy');
 
     // Complaints Generator
     Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
     Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
     Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
-    Route::post('/complaints/generate-draft', [ComplaintController::class, 'generateDraft'])->name('complaints.generate-draft');
+    Route::post('/complaints/generate-draft', [ComplaintController::class, 'generateDraft'])
+        ->name('complaints.generate-draft')
+        ->middleware('throttle:ai-generation');
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
     Route::get('/complaints/{complaint}/edit', [ComplaintController::class, 'edit'])->name('complaints.edit');
     Route::put('/complaints/{complaint}', [ComplaintController::class, 'update'])->name('complaints.update');
     Route::delete('/complaints/{complaint}', [ComplaintController::class, 'destroy'])->name('complaints.destroy');
 });
 
-// Internal Diagnostics & Verification Suite
+// Internal Diagnostics & Verification Suite (Local Development Only)
 Route::get('/internal/run-tests', function (\Illuminate\Http\Request $request) {
+    abort_unless(app()->isLocal(), 404);
     try {
         $step = $request->query('step', 'all');
         $results = [];
@@ -81,10 +88,26 @@ Route::get('/internal/run-tests', function (\Illuminate\Http\Request $request) {
             ]
         );
 
-        if ($step === 'check_messages') {
-            $latestMessages = \App\Models\AssistantMessage::latest('id')->take(4)->get();
+        if ($step === 'check_env') {
             return response()->json([
-                'messages' => $latestMessages,
+                'php_binary' => PHP_BINARY,
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'db_connected' => \Illuminate\Support\Facades\DB::connection()->getPdo() ? true : false,
+            ]);
+        }
+
+        if ($step === 'run_phpunit') {
+            $binary = PHP_BINARY;
+            $phpunit = base_path('vendor/phpunit/phpunit/phpunit');
+            $base = base_path();
+            $filter = $request->query('filter', '');
+            $cmd = "cd /d \"{$base}\" && \"{$binary}\" \"{$phpunit}\" {$filter} 2>&1";
+            exec($cmd, $output, $returnCode);
+            return response()->json([
+                'cmd' => $cmd,
+                'return_code' => $returnCode,
+                'output' => $output,
             ]);
         }
 

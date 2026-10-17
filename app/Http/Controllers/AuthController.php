@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function showRegister()
+    public function showRegister(): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
@@ -18,30 +22,26 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'worker_type' => ['nullable', 'string', 'max:100'],
-            'preferred_language' => ['nullable', 'string', 'in:English,Hindi,Punjabi'],
-        ]);
+        $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'worker_type' => $validated['worker_type'] ?? 'Delivery Partner',
-            'preferred_language' => $validated['preferred_language'] ?? 'English',
-        ]);
+        $user = DB::transaction(function () use ($validated) {
+            return User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'worker_type' => $validated['worker_type'] ?? 'Delivery Partner',
+                'preferred_language' => $validated['preferred_language'] ?? 'English',
+            ]);
+        });
 
         Auth::login($user);
 
         return redirect()->route('dashboard')->with('success', 'Welcome to Gigy! Your AI Gig Companion is ready.');
     }
 
-    public function showLogin()
+    public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
@@ -49,13 +49,9 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-
+        $credentials = $request->only('email', 'password');
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
@@ -68,7 +64,7 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
