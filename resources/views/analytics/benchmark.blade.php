@@ -5,17 +5,17 @@
 @section('content')
 <div>
     <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <h1 style="font-size: 1.65rem; font-weight: 800; color: var(--gray-900);">Community Benchmark</h1>
-                <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 700;">Peer Intelligence</span>
+    <div class="page-header">
+        <div class="page-header-title-wrap">
+            <div class="page-header-title">
+                <span>Community Benchmark</span>
+                <span class="badge" style="background: #ede9fe; color: #6d28d9; font-weight: 700; font-size: 0.75rem; vertical-align: middle;">Peer Intelligence</span>
             </div>
-            <p style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.25rem;">
+            <p class="page-header-subtitle">
                 Compare your net hourly pay, deliveries, and expenses against anonymized peer medians in your city.
             </p>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div class="page-header-actions">
             <a href="{{ route('analytics.index') }}" class="btn btn-secondary btn-sm">&larr; Analytics Overview</a>
         </div>
     </div>

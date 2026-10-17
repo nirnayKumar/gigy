@@ -5,17 +5,17 @@
 @section('content')
 <div>
     <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <h1 style="font-size: 1.65rem; font-weight: 800; color: var(--gray-900);">Worker Issues & Complaint Trends</h1>
-                <span class="badge" style="background: #fef2f2; color: #b91c1c; font-weight: 700;">Grievance Intelligence</span>
+    <div class="page-header">
+        <div class="page-header-title-wrap">
+            <div class="page-header-title">
+                <span>Worker Issues & Grievance Trends</span>
+                <span class="badge" style="background: #fef2f2; color: #b91c1c; font-weight: 700; font-size: 0.75rem; vertical-align: middle;">Grievance Intelligence</span>
             </div>
-            <p style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.25rem;">
+            <p class="page-header-subtitle">
                 Track which problems workers are reporting across delivery platforms, resolution pacing, and systemic payment discrepancies.
             </p>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div class="page-header-actions">
             <a href="{{ route('complaints.create') }}" class="btn btn-primary btn-sm">+ Draft New Dispute</a>
         </div>
     </div>

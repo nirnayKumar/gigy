@@ -4,30 +4,30 @@
 
 @section('content')
 <div>
-    <!-- Top Header & Filter Controls -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <h1 style="font-size: 1.65rem; font-weight: 800; color: var(--gray-900);">Intelligence & Analytics</h1>
-                <span class="badge badge-info" style="font-size: 0.75rem;">Gigy 2.0</span>
+    <!-- Top Header & Action Controls -->
+    <div class="page-header">
+        <div class="page-header-title-wrap">
+            <div class="page-header-title">
+                <span>Intelligence & Analytics</span>
+                <span class="badge badge-info" style="font-size: 0.75rem; vertical-align: middle;">Gigy 2.0</span>
                 @if($kpis['is_using_demo_fallback'])
                     <span class="badge badge-warning" style="font-size: 0.725rem;" title="Showing benchmark demo performance for initial onboarding evaluation">
                         Demo Sandbox Mode
                     </span>
                 @endif
             </div>
-            <p style="font-size: 0.875rem; color: var(--gray-600); margin-top: 0.25rem;">
+            <p class="page-header-subtitle">
                 Cross-platform earnings intelligence, delivery efficiency, and community benchmark comparison.
             </p>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <div class="page-header-actions">
             <a href="{{ route('analytics.export', request()->all()) }}" class="btn btn-secondary btn-sm" aria-label="Export analytics report to CSV">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Export CSV
+                <span>Export CSV</span>
             </a>
             <a href="{{ route('earnings.create') }}" class="btn btn-primary btn-sm">
-                + Log Shift
+                <span>+ Log Shift</span>
             </a>
         </div>
     </div>
