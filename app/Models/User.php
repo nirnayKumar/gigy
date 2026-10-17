@@ -25,6 +25,8 @@ class User extends Authenticatable
         'password',
         'worker_type',
         'preferred_language',
+        'city',
+        'is_demo',
     ];
 
     /**
@@ -47,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_demo' => 'boolean',
         ];
     }
 
@@ -63,5 +66,20 @@ class User extends Authenticatable
     public function assistantConversations(): HasMany
     {
         return $this->hasMany(AssistantConversation::class)->orderBy('updated_at', 'desc');
+    }
+
+    public function workSessions(): HasMany
+    {
+        return $this->hasMany(WorkSession::class)->orderBy('start_time', 'desc');
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class)->orderBy('pickup_time', 'desc');
+    }
+
+    public function earningsGoals(): HasMany
+    {
+        return $this->hasMany(EarningsGoal::class)->orderBy('start_date', 'desc');
     }
 }

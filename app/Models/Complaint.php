@@ -22,6 +22,11 @@ class Complaint extends Model
         'preferred_language',
         'generated_draft',
         'status',
+        'city',
+        'worker_role',
+        'resolution_time_hours',
+        'resolved_at',
+        'is_demo',
     ];
 
     protected function casts(): array
@@ -30,6 +35,9 @@ class Complaint extends Model
             'expected_amount' => 'decimal:2',
             'received_amount' => 'decimal:2',
             'incident_date' => 'date',
+            'resolution_time_hours' => 'integer',
+            'resolved_at' => 'datetime',
+            'is_demo' => 'boolean',
         ];
     }
 

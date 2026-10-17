@@ -14,6 +14,10 @@ class EarningsEntry extends Model
     protected $fillable = [
         'user_id',
         'work_date',
+        'company_name',
+        'city',
+        'worker_role',
+        'deliveries_count',
         'gross_earnings',
         'incentives',
         'fuel_expenses',
@@ -21,6 +25,7 @@ class EarningsEntry extends Model
         'platform_deductions',
         'hours_worked',
         'notes',
+        'is_demo',
     ];
 
     protected function casts(): array
@@ -33,12 +38,19 @@ class EarningsEntry extends Model
             'other_expenses' => 'decimal:2',
             'platform_deductions' => 'decimal:2',
             'hours_worked' => 'decimal:2',
+            'deliveries_count' => 'integer',
+            'is_demo' => 'boolean',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function workSession(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(WorkSession::class);
     }
 
     public function complaints(): HasMany

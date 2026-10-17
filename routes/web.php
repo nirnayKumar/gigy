@@ -67,6 +67,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/complaints/{complaint}/edit', [ComplaintController::class, 'edit'])->name('complaints.edit');
     Route::put('/complaints/{complaint}', [ComplaintController::class, 'update'])->name('complaints.update');
     Route::delete('/complaints/{complaint}', [ComplaintController::class, 'destroy'])->name('complaints.destroy');
+
+    // Gigy 2.0 Analytics & Intelligence Platform
+    Route::get('/analytics', [\App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('/analytics/export', [\App\Http\Controllers\AnalyticsController::class, 'exportCsv'])->name('analytics.export');
+    Route::get('/analytics/benchmark', [\App\Http\Controllers\BenchmarkController::class, 'index'])->name('analytics.benchmark');
+    Route::get('/analytics/platforms', [\App\Http\Controllers\PlatformInsightsController::class, 'index'])->name('analytics.platforms');
+    Route::get('/analytics/complaints', [\App\Http\Controllers\ComplaintAnalyticsController::class, 'index'])->name('analytics.complaints');
+
+    // Goals Management
+    Route::post('/goals', [\App\Http\Controllers\GoalController::class, 'store'])->name('goals.store');
+    Route::delete('/goals/{goal}', [\App\Http\Controllers\GoalController::class, 'destroy'])->name('goals.destroy');
 });
 
 // Internal Diagnostics & Verification Suite (Local Development Only)
@@ -94,6 +105,26 @@ Route::get('/internal/run-tests', function (\Illuminate\Http\Request $request) {
                 'php_version' => PHP_VERSION,
                 'laravel_version' => app()->version(),
                 'db_connected' => \Illuminate\Support\Facades\DB::connection()->getPdo() ? true : false,
+                'companies_count' => \App\Models\Company::count(),
+                'workers_count' => \App\Models\User::where('is_demo', true)->count(),
+                'sessions_count' => \App\Models\WorkSession::count(),
+                'deliveries_count' => \App\Models\Delivery::count(),
+                'complaints_count' => \App\Models\Complaint::count(),
+                'goals_count' => \App\Models\EarningsGoal::count(),
+            ]);
+        }
+
+        if ($step === 'run_artisan') {
+            $binary = PHP_BINARY;
+            $artisan = base_path('artisan');
+            $base = base_path();
+            $artisanCmd = escapeshellcmd($request->query('cmd', 'migrate --force'));
+            $cmd = "cd /d \"{$base}\" && \"{$binary}\" \"{$artisan}\" {$artisanCmd} 2>&1";
+            exec($cmd, $output, $returnCode);
+            return response()->json([
+                'cmd' => $cmd,
+                'return_code' => $returnCode,
+                'output' => $output,
             ]);
         }
 
